@@ -13,14 +13,29 @@ Salesforce CLI overview skill for safe org data access and maintenance. This ski
 
 ## Quick Start
 
-### 1. Invoke the skill
+### 1. Set up Salesforce CLI
+
+- Install Salesforce CLI from the npm package: `https://www.npmjs.com/package/@salesforce/cli`
+- Node.js must already be installed on your computer before installing Salesforce CLI from npm
+
+### 2. Add the skill to your agent
+
+- Add this skill to your agent skills folder before trying to use it
+
+### 3. Connect your first Salesforce org
+
+- Before starting to interact with the `sf` CLI, log in to your first organization
+- Ask your agent to guide you through that login flow if needed
+- You can only start using this skill after at least one organization is connected
+
+### 4. Invoke the skill
 
 ```text
 Skill: salesforce-cli
 Request: "Check the Status__c field on record a01xx0000001234 in org dev"
 ```
 
-### 2. Typical use cases
+### 5. Typical use cases
 
 - Retrieve an existing record with `sf data get record`
 - Search existing data with `sf data search`
