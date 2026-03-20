@@ -1,6 +1,6 @@
 # Skills
 
-This repository contains reusable Codex skills. It currently includes one top-level skill and is structured to grow with additional skills over time.
+This repository contains reusable Codex skills. It currently includes multiple top-level skills and is structured to grow with additional skills over time.
 
 ## Available Skills
 
@@ -13,6 +13,14 @@ Docs:
 - [salesforce-cli/README.md](salesforce-cli/README.md)
 - [salesforce-cli/SKILL.md](salesforce-cli/SKILL.md)
 
+### `only-ui`
+
+React implementation skill for turning Figma designs into production code for projects that use the Onlyfy OUI component library (`@onlyfyio/oui`). It focuses on mapping design intent to idiomatic OUI components instead of raw HTML primitives.
+
+Docs:
+
+- [only-ui/SKILL.md](only-ui/SKILL.md)
+
 ## Notes
 
 - More skills can be added to this repository as new workflows are formalized
@@ -23,6 +31,8 @@ Docs:
 ```text
 .
 ├── README.md
+├── only-ui/
+│   └── SKILL.md
 └── salesforce-cli/
     ├── README.md
     ├── SKILL.md
