@@ -21,6 +21,14 @@ Docs:
 
 - [only-ui/SKILL.md](only-ui/SKILL.md)
 
+### `spec-driven-development`
+
+Spec-Driven Development skill for guiding Codex users through GitHub's Spec-Kit workflow. It is based on the upstream [`SpillwaveSolutions/sdd-skill`](https://github.com/SpillwaveSolutions/sdd-skill), adapted for Codex usage. It covers greenfield and brownfield executable specification flows, translates upstream slash-command guidance into Codex skill usage, and summarizes generated artifacts with feature status tracking.
+
+Docs:
+
+- [spec-driven-development/SKILL.md](spec-driven-development/SKILL.md)
+
 ## Notes
 
 - More skills can be added to this repository as new workflows are formalized
@@ -33,6 +41,9 @@ Docs:
 ├── README.md
 ├── only-ui/
 │   └── SKILL.md
+├── spec-driven-development/
+│   ├── SKILL.md
+│   └── references/
 └── salesforce-cli/
     ├── README.md
     ├── SKILL.md
