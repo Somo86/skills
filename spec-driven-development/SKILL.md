@@ -29,49 +29,82 @@ Prefer installed `$speckit-*` Codex skills when they exist. Use this `sdd` skill
 
 This skill is optimized to be used with Jira.
 
-It works better when Jira MCP or Jira CLI is installed and configured, because that allows the skill to retrieve issue titles and derive better branch short names automatically.
+Treat Jira as a prerequisite for starting a new feature specification.
 
-If neither Jira MCP nor Jira CLI is available, suggest that the user install or configure one of them for a smoother Jira-based workflow.
-
-Before starting a new feature specification, always ask the user for the Jira epic or ticket ID if they have not already provided it.
-
-Do not begin a new `Specify` step until that ID is available.
+Before starting a new `Specify` step, always obtain the Jira parent issue key first.
 
 Accepted examples:
 - `JCOM-123`
 - `jcom-123`
 
-Normalize the value to lowercase when using it in branch short names.
+If the user does not have an issue yet, create it first through a configured Jira CLI.
+
+Do not begin a new `Specify` step until the Jira key is known.
+
+For Jira issue creation and lookup:
+- assume the default Jira project key is `JCOM` unless the user explicitly provides another project key
+- use Jira CLI for issue creation, issue lookup, title lookup, and subtask creation
+
+## Jira CLI Setup and Authentication
+
+If Jira CLI is required but unavailable, prefer the repository bootstrap script when the current repo provides one:
+
+```bash
+./scripts/setup-jira-cli.sh
+```
+
+The script may install `jira-cli` with Homebrew when `brew` is available, but it must not create or store credentials for the user.
+
+Do not automate credential capture inside this skill.
+
+Ask the user to provide their own Atlassian API token and initialize the CLI securely.
+
+For `ankitpokhrel/jira-cli`, prefer this setup flow:
+
+```bash
+export JIRA_API_TOKEN="<your-atlassian-api-token>"
+jira init
+```
+
+During `jira init`, the user should choose the correct Jira deployment type and provide their Jira site URL and email address.
+
+If the team already uses another secure credential source such as `.netrc`, keychain, or a managed shell profile, use that instead of writing secrets into repo files.
+
+If Jira CLI is unavailable, unauthenticated, or the token is expired when CLI-backed Jira work is required, stop and tell the user to install or reconfigure it before continuing.
+
+## Jira-Driven Naming Rules
+
+Keep the naming conventions from this SDD skill.
 
 When invoking the specification workflow for a new feature, explicitly preserve the Jira ID in the branch short name.
 
-Preferred branch format:
+Preferred Spec-Kit feature format:
 
 ```text
 001-jcom-123-short-feature-name
 ```
 
-The numeric prefix is still controlled by Spec Kit.
+This format applies to the generated branch short name and the matching feature directory under `specs/`.
 
-The skill's responsibility is to make sure the Jira ID is included in the short-name portion so the resulting branch name follows the pattern above.
+The numeric prefix is controlled by Spec-Kit.
 
-The short feature name should be derived from the Jira issue title whenever possible.
+The Jira-specific part of the short name must start with the normalized Jira key in lowercase, followed by a concise kebab-case feature suffix.
 
-Preferred source order:
-1. Jira MCP, if available in the environment
-2. Jira CLI, if configured and available
-3. Fallback: derive a concise short feature name from the specification request itself
+Use the Jira issue title to derive the suffix whenever possible.
 
-Use the Jira epic or ticket ID to fetch the Jira title, then normalize that title into a concise branch-safe suffix.
+Preferred source order for the suffix:
+1. Jira CLI title lookup
+2. Fallback: derive a concise branch-safe suffix from the specification request itself
 
 Example:
 - Jira ID: `JCOM-123`
 - Jira title: `Add family mode to trip planner`
 - Branch short name: `jcom-123-family-mode-trip-planner`
+- Full Spec-Kit feature name: `001-jcom-123-family-mode-trip-planner`
 
-If Jira data cannot be retrieved, do not block the workflow.
+If Jira data cannot be retrieved, do not block the workflow after the Jira key is known.
 
-Instead, derive a short feature name from the spec request and continue, while noting that Jira title lookup was unavailable.
+Instead, derive the suffix from the spec request and continue, while noting that Jira title lookup was unavailable.
 
 When guiding the user or generating a prompt for `$speckit-specify`, instruct Codex to preserve the Jira ID in the branch short name, for example:
 
@@ -80,20 +113,6 @@ $speckit-specify JCOM-123 Add user authentication.
 Preserve the Jira ID in the branch short name.
 Use branch short name: jcom-123-user-auth.
 ```
-
-If the user has not provided a Jira ID, ask for it explicitly before proceeding with specification creation.
-
-After `tasks.md` is generated, suggest that the user review the created task list.
-
-If the user confirms that the generated backlog looks correct, suggest creating Jira subtasks automatically from `tasks.md`.
-
-When the user agrees, create one Jira subtask per task in `tasks.md` by using Jira MCP first, or Jira CLI if MCP is unavailable.
-
-Every created Jira task must be a subtask of the Jira epic or parent issue already associated with the feature.
-
-Primary source for that Jira ID:
-1. the Jira epic or ticket ID the user provided at the start of the workflow
-2. fallback: infer it from the feature folder name
 
 Feature folders follow this format:
 
@@ -119,13 +138,49 @@ Example:
 jcom-123
 ```
 
+## Jira Issue and Subtask Operations
+
+If the user says the Jira issue does not exist yet, create it first through Jira CLI.
+
+Write the Jira summary and description in English based on the user's request.
+
+Default to a task-like issue type unless the user asked for another type.
+
+Preferred command shape:
+
+```bash
+jira issue create \
+  --project JCOM \
+  --summary "<english summary>" \
+  --description "<english description>" \
+  --type Task
+```
+
+Replace `JCOM` with the user-provided project key when they explicitly requested a different Jira project.
+
+If the installed Jira CLI variant uses different subcommands or flags, adapt the command to that CLI while preserving the same behavior.
+
+Capture the created Jira key from the CLI output and use it for the Spec-Kit feature name.
+
+After `tasks.md` is generated, suggest that the user review the created task list.
+
+If the user confirms that the generated backlog looks correct, suggest creating Jira subtasks automatically from `tasks.md`.
+
+When the user agrees, create one Jira subtask per task in `tasks.md` through Jira CLI.
+
+Every created Jira task must be a subtask of the Jira epic or parent issue already associated with the feature.
+
+Primary source for that Jira ID:
+1. the Jira epic or ticket ID the user provided at the start of the workflow
+2. fallback: infer it from the feature folder name
+
 Before creating Jira subtasks:
 - read `tasks.md`
 - map each actionable task into a Jira subtask title and description
 - preserve task ordering where possible
 - make sure the correct Jira parent is used for every created subtask
 
-If Jira integration is unavailable, suggest installing or configuring Jira MCP or Jira CLI instead of silently skipping subtask creation.
+If Jira CLI is unavailable for the requested operation, stop and tell the user that Jira CLI must be installed and configured before continuing.
 
 ## Structured Guide Source
 
@@ -227,8 +282,10 @@ When using this skill, Codex should:
 - keep feature status and next-step guidance consistent even when some steps are performed manually
 - use `example/EXAMPLE.md` as the preferred structured explanation template when teaching or documenting the workflow
 - ask for a Jira epic or ticket ID before starting a new feature specification if the user has not already supplied one
+- create the Jira issue first through Jira CLI when the user confirms that no Jira issue exists yet
 - preserve that Jira ID in the branch short name for the resulting Spec Kit feature branch
-- try to retrieve the Jira ticket title through Jira MCP or Jira CLI and use it as the basis for the short feature name
+- keep the Spec-Kit naming convention `001-jira-id-feature-name` instead of switching to a raw Jira-only branch name
+- try to retrieve the Jira ticket title through Jira CLI and use it as the basis for the short feature name
 - fall back to a short feature name derived from the specification request if Jira lookup is unavailable or fails
 - after `tasks.md` is created, suggest that the user review the task list before implementation starts
 - if the user approves the backlog, suggest creating Jira subtasks from `tasks.md`
